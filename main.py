@@ -1,8 +1,12 @@
+import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from sqlmodel import Session, select
 from database import create_db_and_tables, engine, Medication
 from notifications import send_low_stock_alert
+
+# Load the secret key that protects our daily job
+CRON_SECRET = os.getenv("CRON_SECRET")
 
 
 # This "lifespan" function runs before the API starts accepting requests
@@ -37,7 +41,7 @@ def get_medications():
         return medications
 
 
-# 3. UPDATE: Log that I took my daily dose
+# 3. UPDATE: Log that I took my daily dose manually
 @app.put("/medications/{med_id}/take")
 def take_medication(med_id: int):
     with Session(engine) as session:
@@ -60,7 +64,7 @@ def take_medication(med_id: int):
 
 
 # 4. UPDATE: Refill an empty medication
-@app.put("/medications/{med_id}/refil")
+@app.put("/medications/{med_id}/refill")
 def refill_medication(med_id: int, amount: int):
     with Session(engine) as session:
         med = session.get(Medication, med_id)
@@ -77,7 +81,7 @@ def refill_medication(med_id: int, amount: int):
         }
 
 
-# 5. BUSINESS LOGIC: Check all stock and trigger alerts
+# 5. BUSINESS LOGIC: Check all stock manually and trigger alerts
 @app.get("/check-stock")
 def check_all_stock():
     alerts_triggered = []
@@ -98,3 +102,36 @@ def check_all_stock():
         "message": "Daily stock check complete.",
         "alerts_sent_for": alerts_triggered,
     }
+
+
+# 6. AUTOMATION: Daily Job to deduct pills and check stock
+@app.post("/daily-automation/")
+def run_daily_automation(authorization: str = Header(None)):
+    # Security Check: Is this the authorized Alarm Clock?
+    if authorization != f"Bearer {CRON_SECRET}":
+        raise HTTPException(status_code=401, detail="Unauthorized access!")
+
+    alerts_triggered = []
+
+    with Session(engine) as session:
+        medications = session.exec(select(Medication)).all()
+
+        for med in medications:
+            # Automatically "take" the daily dose
+            if med.total_pills >= med.daily_dosage:
+                med.total_pills -= med.daily_dosage
+            else:
+                med.total_pills = 0  # Prevent negative numbers
+
+            session.add(med)  # Save the new pill count
+
+            # Check if stock is low (14 days or less)
+            if med.daily_dosage > 0:
+                days_remaining = med.total_pills // med.daily_dosage
+                if days_remaining <= 14:
+                    send_low_stock_alert(med.name, days_remaining)
+                    alerts_triggered.append(med.name)
+
+        session.commit()  # Push all changes to Neon database
+
+    return {"message": "Daily automation complete.", "alerts_sent": alerts_triggered}
