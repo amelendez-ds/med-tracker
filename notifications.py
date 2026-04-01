@@ -1,32 +1,36 @@
+import os
 import smtplib
 from email.message import EmailMessage
+from dotenv import load_dotenv
 
-# We replace this later
-EMAIL_ADDRESS = "alvaromegu90@gmail.com"
-EMAIL_PASSWORD = "my_email_password"
+load_dotenv()
+
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 
 def send_low_stock_alert(med_name: str, days_left: int):
-    """Calculates stock and sends an alert. Currently set to print to terminal for testing"""
+    """Sends a real email alert if stock is low."""
 
-    # 1. The immediate visual feedback for local testing
-    print(
-        f"\n ALARM TRIGGERED: {med_name} is running low! Only {days_left} days of stock remaining.\n"
+    # Safety check: Don't crash if credentials aren't set
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        print(
+            f"Terminal Alert: {med_name} is low ({days_left} days). Email credentials missing."
+        )
+        return
+
+    msg = EmailMessage()
+    msg.set_content(
+        f"Time to refill {med_name}! You only have {days_left} days of stock remaining."
     )
+    msg["Subject"] = f"Medication Alert: Low stock for {med_name}"
+    msg["From"] = EMAIL_ADDRESS
+    msg["To"] = EMAIL_ADDRESS  # Sending it to yourself
 
-    # -- REAL EMAIL CODE (Uncomment later) ---
-    # msg = EmailMessage()
-    # msg.set_content(
-    #     f"Time to refil {med_name}! You only have {days_left} days of stock remaining."
-    # )
-    # msg["Subject"] = f"Medication Alert: Low stock for {med_name}"
-    # msg["From"] = EMAIL_ADDRESS
-    # msg["To"] = EMAIL_ADDRESS  # Sending it to myself
-
-    # try:
-    #     with smtplib.SMTP_SLL("smtp.gmail.com", 465) as smtp:
-    #         smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-    #         smtp.send_message(msg)
-    #     print("Real email sent successfully!")
-    # except Exception as e:
-    #     print(f"Failed to send real email: {e}")
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+        print(f"Alert email sent successfully for {med_name}!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
