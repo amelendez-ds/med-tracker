@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Header
 from sqlmodel import Session, select
 from database import create_db_and_tables, engine, Medication
-from notifications import send_low_stock_alert
+from notifications import notify_low_stock
 
 # Load the secret key that protects our daily job
 CRON_SECRET = os.getenv("CRON_SECRET")
@@ -96,7 +96,7 @@ def check_all_stock():
                 days_remaining = med.total_pills // med.daily_dosage
 
                 if days_remaining <= 14:
-                    send_low_stock_alert(med.name, days_remaining)
+                    notify_low_stock(med.name, days_remaining)
                     alerts_triggered.append(med.name)
     return {
         "message": "Daily stock check complete.",
