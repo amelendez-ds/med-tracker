@@ -1,6 +1,6 @@
 # 💊 Med Tracker API
 
-A cloud-native microservice designed to track medication inventory and automate multi-channel low-stock alerts. Built with FastAPI and hosted on Render.
+A cloud-native microservice designed to track medication inventory and automate multi-channel low-stock alerts. Built with FastAPI and hosted on Render. I wanted to practice building REST API, containerisation via Docker, and cloud deployment, and I thought of doing so via a small personal project. The purpose of the tracker is to send the user automated notifications to their email and/or Discord server when their medication stock runs low.
 
 ## 🚀 Features
 
