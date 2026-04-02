@@ -28,7 +28,12 @@ def send_low_stock_alert(med_name: str, days_left: int):
     msg["To"] = EMAIL_ADDRESS  # Sending it to yourself
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 587) as smtp:
+            # Connect to the server
+            smtp.ehlo()  # Identify app to Google
+            smtp.starttls()  # Secure connection
+            smtp.ehlo()  # Reidentify now that it's secure
+            # Login and send
             smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             smtp.send_message(msg)
         print(f"Alert email sent successfully for {med_name}!")
