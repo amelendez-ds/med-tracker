@@ -129,7 +129,7 @@ def run_daily_automation(authorization: str = Header(None)):
             if med.daily_dosage > 0:
                 days_remaining = med.total_pills // med.daily_dosage
                 if days_remaining <= 14:
-                    send_low_stock_alert(med.name, days_remaining)
+                    notify_low_stock(med.name, days_remaining)
                     alerts_triggered.append(med.name)
 
         session.commit()  # Push all changes to Neon database
