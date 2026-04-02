@@ -13,7 +13,7 @@ load_dotenv()
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL")
+DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
 
 load_dotenv()
