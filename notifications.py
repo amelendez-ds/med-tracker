@@ -1,9 +1,3 @@
-# import os
-# import smtplib
-# from email.message import EmailMessage
-# from dotenv import load_dotenv
-
-
 import os
 import requests
 from dotenv import load_dotenv
@@ -18,7 +12,6 @@ DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
 load_dotenv()
 
-# You will need to create a free Resend account and get an API key
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 MY_EMAIL = os.getenv("EMAIL_ADDRESS")
 
