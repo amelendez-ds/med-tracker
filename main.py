@@ -81,7 +81,7 @@ def refill_medication(med_id: int, amount: int):
         }
 
 
-# 5. BUSINESS LOGIC: Check all stock manually and trigger alerts
+# 5. LOGIC: Check all stock manually and trigger alerts
 @app.get("/check-stock")
 def check_all_stock():
     alerts_triggered = []
