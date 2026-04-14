@@ -1,4 +1,5 @@
 import os
+
 import requests
 from dotenv import load_dotenv
 
@@ -35,7 +36,10 @@ def send_email_alert(med_name: str, days_left: int):
         "from": "onboarding@resend.dev",
         "to": MY_EMAIL,
         "subject": f"Medication Alert: Low stock for {med_name}",
-        "html": f"<p>Time to refill <strong>{med_name}</strong>! You only have {days_left} days of stock remaining.</p>",
+        "html": (
+            f"<p>Time to refill <strong>{med_name}</strong>! "
+            f"You only have {days_left} days of stock remaining.</p>"
+        ),
     }
 
     try:
@@ -54,7 +58,10 @@ def send_discord_alert(med_name: str, days_left: int):
         return
 
     message = {
-        "content": f"🚨 **Medication Alert:** Time to refill **{med_name}**! You only have {days_left} days of stock remaining."
+        "content": (
+            f"🚨 **Medication Alert:** Time to refill **{med_name}**! "
+            f"You only have {days_left} days of stock remaining."
+        ),
     }
 
     try:

@@ -1,5 +1,7 @@
 # Python-generated files
 __pycache__/
+.pytest_cache/
+.ruff_cache/
 *.py[oc]
 build/
 dist/
@@ -10,5 +12,6 @@ wheels/
 .venv
 .env
 
-# Local folders
+# Local folders & files
 data/
+AUDIT.md

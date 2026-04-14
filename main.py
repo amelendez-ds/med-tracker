@@ -1,8 +1,10 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Header
+
+from fastapi import FastAPI, Header, HTTPException
 from sqlmodel import Session, select
-from database import create_db_and_tables, engine, Medication
+
+from database import Medication, create_db_and_tables, engine
 from notifications import notify_low_stock
 
 # Load the secret key that protects our daily job

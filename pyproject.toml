@@ -1,7 +1,7 @@
 [project]
 name = "med-tracker"
 version = "0.1.0"
-description = "Add your description here"
+description = "Medication Inventory Tracker with Automated Alerts"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -15,5 +15,16 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.5.1",
+    "pytest>=9.0.3",
     "ruff>=0.15.8",
 ]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.format]
+preview = true
