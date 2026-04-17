@@ -15,14 +15,14 @@ class Medication(SQLModel, table=True):
     daily_dosage: int
 
 
-# 2. Grab the Neon URL from the environment!
+# 2. Grab the Neon URL from the environment
 database_url = os.getenv("DATABASE_URL")
 if not database_url:
     raise ValueError(
         "DATABASE_URL is missing! Check your .env file or Render environment variables."
     )
 
-# 3. Create the engine and connect it to where my database lives
+# 3. Create the engine and connect it to where my (Neon) database lives
 engine = create_engine(database_url, echo=True)
 
 

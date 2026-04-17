@@ -15,6 +15,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mypy>=1.20.1",
     "pre-commit>=4.5.1",
     "pytest>=9.0.3",
     "ruff>=0.15.8",
@@ -28,3 +29,6 @@ select = ["E", "F", "I"]
 
 [tool.ruff.format]
 preview = true
+
+[tool.mypy]
+ignore_missing_imports = true
