@@ -3,14 +3,15 @@ import os
 import requests
 from dotenv import load_dotenv
 
+# This needs to be loaded before getting env variables
+load_dotenv()
+
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
-load_dotenv()
 
-
-def send_email_alert(med_name: str, days_left: int):
+def send_email_alert(med_name: str, days_left: int) -> None:
     """Sends a real email alert if stock is low via HTTP API."""
 
     if not RESEND_API_KEY or not EMAIL_ADDRESS:
@@ -43,7 +44,7 @@ def send_email_alert(med_name: str, days_left: int):
         print(f"Failed to send email: {e}")
 
 
-def send_discord_alert(med_name: str, days_left: int):
+def send_discord_alert(med_name: str, days_left: int) -> None:
     """Sends a push notification to Discord."""
 
     if not DISCORD_WEBHOOK:
@@ -65,7 +66,7 @@ def send_discord_alert(med_name: str, days_left: int):
         print(f"Failed to send alert: {e}")
 
 
-def notify_low_stock(med_name: str, days_left: int):
+def notify_low_stock(med_name: str, days_left: int) -> None:
     """Triggers all notification channels for low stock."""
     print(f"Triggering alerts for {med_name}...")
 

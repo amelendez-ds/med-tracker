@@ -27,5 +27,5 @@ engine = create_engine(database_url, echo=True)
 
 
 # 4. Function to physically create the file and tables when the app starts
-def create_db_and_tables():
+def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
