@@ -3,24 +3,17 @@ import os
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
-
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
-
 load_dotenv()
-
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-MY_EMAIL = os.getenv("EMAIL_ADDRESS")
 
 
 def send_email_alert(med_name: str, days_left: int):
     """Sends a real email alert if stock is low via HTTP API."""
 
-    if not RESEND_API_KEY or not MY_EMAIL:
+    if not RESEND_API_KEY or not EMAIL_ADDRESS:
         print(f"Terminal Alert: {med_name} is low. Credentials missing.")
         return
 
@@ -34,7 +27,7 @@ def send_email_alert(med_name: str, days_left: int):
     # to send emails to the address I verified my account with.
     payload = {
         "from": "onboarding@resend.dev",
-        "to": MY_EMAIL,
+        "to": EMAIL_ADDRESS,
         "subject": f"Medication Alert: Low stock for {med_name}",
         "html": (
             f"<p>Time to refill <strong>{med_name}</strong>! "
