@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException
 from sqlmodel import Session, select
 
-from src.med_tracker.database import Medication, create_db_and_tables, engine
-from src.med_tracker.notifications import notify_low_stock
+from med_tracker.database import Medication, create_db_and_tables, engine
+from med_tracker.notifications import notify_low_stock
 
 # Load the secret key that protects our daily job
 CRON_SECRET = os.getenv("CRON_SECRET")

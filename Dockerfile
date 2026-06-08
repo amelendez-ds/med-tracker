@@ -18,4 +18,4 @@ EXPOSE 8000
 
 # 7. The command to start the server when the container turns on
 # Note: We use --host 0.0.0.0 in Docker so it is accessible outside the container
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "uvicorn", "med_tracker.main:app", "--host", "0.0.0.0", "--port", "8000"]
