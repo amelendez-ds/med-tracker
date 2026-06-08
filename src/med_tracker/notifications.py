@@ -1,25 +1,20 @@
 import os
+
 import requests
 from dotenv import load_dotenv
 
+# This needs to be loaded before getting env variables
 load_dotenv()
 
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
 
-load_dotenv()
-
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-MY_EMAIL = os.getenv("EMAIL_ADDRESS")
-
-
-def send_email_alert(med_name: str, days_left: int):
+def send_email_alert(med_name: str, days_left: int) -> None:
     """Sends a real email alert if stock is low via HTTP API."""
 
-    if not RESEND_API_KEY or not MY_EMAIL:
+    if not RESEND_API_KEY or not EMAIL_ADDRESS:
         print(f"Terminal Alert: {med_name} is low. Credentials missing.")
         return
 
@@ -33,9 +28,12 @@ def send_email_alert(med_name: str, days_left: int):
     # to send emails to the address I verified my account with.
     payload = {
         "from": "onboarding@resend.dev",
-        "to": MY_EMAIL,
+        "to": EMAIL_ADDRESS,
         "subject": f"Medication Alert: Low stock for {med_name}",
-        "html": f"<p>Time to refill <strong>{med_name}</strong>! You only have {days_left} days of stock remaining.</p>",
+        "html": (
+            f"<p>Time to refill <strong>{med_name}</strong>! "
+            f"You only have {days_left} days of stock remaining.</p>"
+        ),
     }
 
     try:
@@ -46,7 +44,7 @@ def send_email_alert(med_name: str, days_left: int):
         print(f"Failed to send email: {e}")
 
 
-def send_discord_alert(med_name: str, days_left: int):
+def send_discord_alert(med_name: str, days_left: int) -> None:
     """Sends a push notification to Discord."""
 
     if not DISCORD_WEBHOOK:
@@ -54,7 +52,10 @@ def send_discord_alert(med_name: str, days_left: int):
         return
 
     message = {
-        "content": f"🚨 **Medication Alert:** Time to refill **{med_name}**! You only have {days_left} days of stock remaining."
+        "content": (
+            f"🚨 **Medication Alert:** Time to refill **{med_name}**! "
+            f"You only have {days_left} days of stock remaining."
+        ),
     }
 
     try:
@@ -65,7 +66,7 @@ def send_discord_alert(med_name: str, days_left: int):
         print(f"Failed to send alert: {e}")
 
 
-def notify_low_stock(med_name: str, days_left: int):
+def notify_low_stock(med_name: str, days_left: int) -> None:
     """Triggers all notification channels for low stock."""
     print(f"Triggering alerts for {med_name}...")
 
