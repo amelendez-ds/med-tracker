@@ -1,4 +1,5 @@
 import os
+from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException
@@ -13,7 +14,7 @@ CRON_SECRET = os.getenv("CRON_SECRET")
 
 # This "lifespan" function runs before the API starts accepting requests
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     print("Starting up: Creating database tables...")
     create_db_and_tables()
     yield
@@ -26,7 +27,7 @@ app = FastAPI(lifespan=lifespan)
 
 # 1. CREATE: Add a new medication to the database
 @app.post("/medications/", response_model=Medication)
-def add_medication(med: Medication):
+def add_medication(med: Medication) -> Medication:
     with Session(engine) as session:
         session.add(med)
         session.commit()
@@ -36,7 +37,7 @@ def add_medication(med: Medication):
 
 # 2. READ: Get a list of all my medications
 @app.get("/medications/", response_model=list[Medication])
-def get_medications():
+def get_medications() -> Sequence[Medication]:
     with Session(engine) as session:
         # select() fetches everything from the Medication table
         medications = session.exec(select(Medication)).all()
@@ -45,7 +46,7 @@ def get_medications():
 
 # 3. UPDATE: Log that I took my daily dose manually
 @app.put("/medications/{med_id}/take")
-def take_medication(med_id: int):
+def take_medication(med_id: int) -> dict:
     with Session(engine) as session:
         med = session.get(Medication, med_id)
         if not med:
@@ -67,7 +68,7 @@ def take_medication(med_id: int):
 
 # 4. UPDATE: Refill an empty medication
 @app.put("/medications/{med_id}/refill")
-def refill_medication(med_id: int, amount: int):
+def refill_medication(med_id: int, amount: int) -> dict:
     with Session(engine) as session:
         med = session.get(Medication, med_id)
         if not med:
@@ -85,7 +86,7 @@ def refill_medication(med_id: int, amount: int):
 
 # 5. LOGIC: Check all stock manually and trigger alerts
 @app.get("/check-stock")
-def check_all_stock():
+def check_all_stock() -> dict:
     alerts_triggered = []
 
     with Session(engine) as session:
@@ -108,7 +109,7 @@ def check_all_stock():
 
 # 6. AUTOMATION: Daily Job to deduct pills and check stock
 @app.post("/daily-automation/")
-def run_daily_automation(authorization: str = Header(None)):
+def run_daily_automation(authorization: str | None = Header(None)) -> dict:
     # Security Check: Is this the authorized Alarm Clock?
     if authorization != f"Bearer {CRON_SECRET}":
         raise HTTPException(status_code=401, detail="Unauthorized access!")
