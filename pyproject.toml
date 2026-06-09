@@ -26,6 +26,7 @@ dev = [
     "pre-commit>=4.5.1",
     "pytest>=9.0.3",
     "ruff>=0.15.8",
+    "types-requests>=2.33.0.20260518",
 ]
 
 [tool.ruff]
@@ -39,3 +40,4 @@ preview = true
 
 [tool.mypy]
 ignore_missing_imports = true
+disallow_untyped_defs = true
