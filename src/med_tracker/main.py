@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException
 from sqlmodel import Session, select
 
-from med_tracker.core.alerts import notify_low_stock
+from med_tracker.alerts import notify_low_stock
 from med_tracker.core.stock import find_low_stock
 from med_tracker.database import (
     Medication,
@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 
-# 1. CREATE: Add a new medication to the database
+# Route 1. CREATE: Add a new medication to the database
 @app.post("/medications/", response_model=Medication)
 def add_medication(med: Medication) -> Medication:
     with Session(engine) as session:
@@ -41,16 +41,13 @@ def add_medication(med: Medication) -> Medication:
         return med
 
 
-# 2. READ: Get a list of all my medications
+# Route 2. READ: Get a list of all my medications
 @app.get("/medications/", response_model=list[Medication])
 def get_medications() -> Sequence[Medication]:
-    with Session(engine) as session:
-        # select() fetches everything from the Medication table
-        medications = session.exec(select(Medication)).all()
-        return medications
+    return get_all_medications()
 
 
-# 3. UPDATE: Log that I took my daily dose manually
+# Route 3. UPDATE: Log that I took my daily dose manually
 @app.put("/medications/{med_id}/take")
 def take_medication(med_id: int) -> dict:
     with Session(engine) as session:
@@ -72,7 +69,7 @@ def take_medication(med_id: int) -> dict:
         }
 
 
-# 4. UPDATE: Refill an empty medication
+# Route 4. UPDATE: Refill an empty medication
 @app.put("/medications/{med_id}/refill")
 def refill_medication(med_id: int, amount: int) -> dict:
     with Session(engine) as session:
@@ -90,7 +87,7 @@ def refill_medication(med_id: int, amount: int) -> dict:
         }
 
 
-# 5. LOGIC: Check all stock manually and trigger alerts
+# Route 5. LOGIC: Check all stock manually and trigger alerts
 @app.get("/check-stock")
 def check_all_stock() -> dict:
     medications: Sequence[Medication] = get_all_medications()
@@ -103,7 +100,7 @@ def check_all_stock() -> dict:
     }
 
 
-# 6. AUTOMATION: Daily Job to deduct pills and check stock
+# Route 6. AUTOMATION: Daily Job to deduct pills and check stock
 @app.post("/daily-automation/")
 def run_daily_automation(authorization: str | None = Header(None)) -> dict:
     # Security Check: Is this the authorized Alarm Clock?
@@ -133,4 +130,7 @@ def run_daily_automation(authorization: str | None = Header(None)) -> dict:
 
         session.commit()  # Push all changes to Neon database
 
-    return {"message": "Daily automation complete.", "alerts_sent": alerts_triggered}
+    return {
+        "message": "Daily automation complete.",
+        "alerts_sent_for": alerts_triggered,
+    }

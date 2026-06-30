@@ -32,6 +32,7 @@ def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
 
 
+# Get all medications function
 def get_all_medications() -> Sequence[Medication]:
     with Session(engine) as session:
         # select() fetches everything from the Medication table
