@@ -5,8 +5,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException
 from sqlmodel import Session, select
 
-from med_tracker.database import Medication, create_db_and_tables, engine
-from med_tracker.notifications import notify_low_stock
+from med_tracker.core.alerts import notify_low_stock
+from med_tracker.core.stock import find_low_stock
+from med_tracker.database import (
+    Medication,
+    create_db_and_tables,
+    engine,
+    get_all_medications,
+)
 
 # Load the secret key that protects our daily job
 CRON_SECRET = os.getenv("CRON_SECRET")
@@ -87,23 +93,13 @@ def refill_medication(med_id: int, amount: int) -> dict:
 # 5. LOGIC: Check all stock manually and trigger alerts
 @app.get("/check-stock")
 def check_all_stock() -> dict:
-    alerts_triggered = []
-
-    with Session(engine) as session:
-        medications = session.exec(select(Medication)).all()
-
-        for med in medications:
-            # Prevent division by zero just in case
-            if med.daily_dosage > 0:
-                # Use floor division (//) to get whole days
-                days_remaining = med.total_pills // med.daily_dosage
-
-                if days_remaining <= 14:
-                    notify_low_stock(med.name, days_remaining)
-                    alerts_triggered.append(med.name)
+    medications: Sequence[Medication] = get_all_medications()
+    low_stock_meds = find_low_stock(medications, threshold_days=14)
+    for med_name, days_left in low_stock_meds.items():
+        notify_low_stock(med_name, days_left)
     return {
         "message": "Daily stock check complete.",
-        "alerts_sent_for": alerts_triggered,
+        "alerts_sent_for": ", ".join(low_stock_meds.keys()),
     }
 
 
