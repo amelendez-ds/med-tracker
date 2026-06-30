@@ -35,5 +35,4 @@ def create_db_and_tables() -> None:
 def get_all_medications() -> Sequence[Medication]:
     with Session(engine) as session:
         # select() fetches everything from the Medication table
-        medications = session.exec(select(Medication)).all()
-        return medications
+        return session.exec(select(Medication)).all()
