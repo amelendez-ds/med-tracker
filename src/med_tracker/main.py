@@ -1,21 +1,19 @@
-import os
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, HTTPException
-from sqlmodel import Session, select
+from fastapi import FastAPI, Header
 
-from med_tracker.alerts import notify_low_stock
-from med_tracker.core.stock import find_low_stock
+from med_tracker.alerts import notify_low_stock, verify_authorised_cron
+from med_tracker.core.stock import find_low_stock, verify_enough_stock
 from med_tracker.database import (
     Medication,
+    add_med,
     create_db_and_tables,
-    engine,
+    delete_med,
     get_all_medications,
+    get_med,
+    take_all_daily_doses,
 )
-
-# Load the secret key that protects our daily job
-CRON_SECRET = os.getenv("CRON_SECRET")
 
 
 # This "lifespan" function runs before the API starts accepting requests
@@ -34,11 +32,7 @@ app = FastAPI(lifespan=lifespan)
 # Route 1. CREATE: Add a new medication to the database
 @app.post("/medications/", response_model=Medication)
 def add_medication(med: Medication) -> Medication:
-    with Session(engine) as session:
-        session.add(med)
-        session.commit()
-        session.refresh(med)  # Updates the object with the new ID
-        return med
+    return add_med(med)
 
 
 # Route 2. READ: Get a list of all my medications
@@ -50,47 +44,37 @@ def get_medications() -> Sequence[Medication]:
 # Route 3. UPDATE: Log that I took my daily dose manually
 @app.put("/medications/{med_id}/take")
 def take_medication(med_id: int) -> dict:
-    with Session(engine) as session:
-        med = session.get(Medication, med_id)
-        if not med:
-            raise HTTPException(status_code=404, detail="Medication not found")
-        if med.total_pills < med.daily_dosage:
-            raise HTTPException(
-                status_code=400, detail="Not enough pills left! Time to refill."
-            )
-
-        med.total_pills -= med.daily_dosage
-        session.add(med)
-        session.commit()
-        session.refresh(med)
-        return {
-            "message": f"Dose taken! {med.total_pills} pills remaining.",
-            "medication": med,
-        }
+    med = get_med(med_id)
+    verify_enough_stock(med)
+    med.total_pills -= med.daily_dosage
+    add_med(med)
+    return {
+        "message": f"Dose taken! {med.total_pills} pills remaining.",
+        "medication": med,
+    }
 
 
-# Route 4. UPDATE: Refill an empty medication
+# Route 4. DELETE: Remove a specific medication
+@app.delete("/medications/")
+def delete_medication(med_id: int) -> dict:
+    med = get_med(med_id)
+    delete_med(med_id)
+    return {"message": f"Medication {med.name} was sucessfully deleted."}
+
+
+# Route 5. UPDATE: Refill an empty medication
 @app.put("/medications/{med_id}/refill")
 def refill_medication(med_id: int, amount: int) -> dict:
-    with Session(engine) as session:
-        med = session.get(Medication, med_id)
-        if not med:
-            raise HTTPException(status_code=404, detail="Medication not found")
-
-        med.total_pills += amount
-        session.add(med)
-        session.commit()
-        session.refresh(med)
-        return {
-            "message": f"Refilled {amount} pills. Total is now {med.total_pills}.",
-            "medication": med,
-        }
+    med = get_med(med_id)
+    med.total_pills += amount
+    add_med(med)
+    return {"message": f"{med.name} refilled. Total is now {med.total_pills}."}
 
 
-# Route 5. LOGIC: Check all stock manually and trigger alerts
+# Route 6. LOGIC: Check all stock manually and trigger alerts
 @app.get("/check-stock")
 def check_all_stock() -> dict:
-    medications: Sequence[Medication] = get_all_medications()
+    medications = get_all_medications()
     low_stock_meds = find_low_stock(medications, threshold_days=14)
     for med_name, days_left in low_stock_meds.items():
         notify_low_stock(med_name, days_left)
@@ -100,37 +84,19 @@ def check_all_stock() -> dict:
     }
 
 
-# Route 6. AUTOMATION: Daily Job to deduct pills and check stock
+# Route 7. AUTOMATION: Daily Job to deduct pills and check stock
 @app.post("/daily-automation/")
 def run_daily_automation(authorization: str | None = Header(None)) -> dict:
-    # Security Check: Is this the authorized Alarm Clock?
-    if authorization != f"Bearer {CRON_SECRET}":
-        raise HTTPException(status_code=401, detail="Unauthorized access!")
-
-    alerts_triggered = []
-
-    with Session(engine) as session:
-        medications = session.exec(select(Medication)).all()
-
-        for med in medications:
-            # Automatically "take" the daily dose
-            if med.total_pills >= med.daily_dosage:
-                med.total_pills -= med.daily_dosage
-            else:
-                med.total_pills = 0  # Prevent negative numbers
-
-            session.add(med)  # Save the new pill count
-
-            # Check if stock is low (14 days or less)
-            if med.daily_dosage > 0:
-                days_remaining = med.total_pills // med.daily_dosage
-                if days_remaining <= 14:
-                    notify_low_stock(med.name, days_remaining)
-                    alerts_triggered.append(med.name)
-
-        session.commit()  # Push all changes to Neon database
-
+    # If this fails, it raises an HTTPException and stops execution automatically
+    verify_authorised_cron(authorization)
+    # 1. Take the doses and get the updated list back
+    medications = take_all_daily_doses()
+    # 2. Check for low stock
+    low_stock_meds = find_low_stock(medications, threshold_days=14)
+    # 3. Send notifications
+    for med_name, days_left in low_stock_meds.items():
+        notify_low_stock(med_name, days_left)
     return {
         "message": "Daily automation complete.",
-        "alerts_sent_for": alerts_triggered,
+        "alerts_sent_for": ", ".join(low_stock_meds.keys()) or "None",
     }
