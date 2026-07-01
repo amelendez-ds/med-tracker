@@ -1,8 +1,7 @@
 from collections.abc import Sequence
 
-from fastapi import HTTPException
-
 from med_tracker.database import Medication
+from med_tracker.exceptions import InsufficientStockError
 
 
 def calculate_days_left(total_pills: int, daily_dosage: int) -> int:
@@ -30,6 +29,4 @@ def find_low_stock(
 def verify_enough_stock(medication: Medication) -> None:
     # Check the pills specifically for this 'take' action
     if medication.total_pills < medication.daily_dosage:
-        raise HTTPException(
-            status_code=400, detail="Not enough pills left! Time to refill."
-        )
+        raise InsufficientStockError("Not enough pills left! Time to refill.")

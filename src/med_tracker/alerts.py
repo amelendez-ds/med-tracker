@@ -2,7 +2,6 @@ import os
 
 import requests
 from dotenv import load_dotenv
-from fastapi import HTTPException
 
 # This needs to be loaded before getting env variables
 load_dotenv()
@@ -10,8 +9,6 @@ load_dotenv()
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
-# Load the secret key that protects our daily job
-CRON_SECRET = os.getenv("CRON_SECRET")
 
 
 def send_email_alert(med_name: str, days_left: int) -> None:
@@ -77,11 +74,3 @@ def notify_low_stock(med_name: str, days_left: int) -> None:
     send_discord_alert(med_name, days_left)
 
     print(f"Finished sending all alerts for {med_name}.")
-
-
-def verify_authorised_cron(authorization: str | None) -> bool:
-    # Security Check: Is this the authorized Alarm Clock?
-    if authorization != f"Bearer {CRON_SECRET}":
-        raise HTTPException(status_code=401, detail="Unauthorized access!")
-    else:
-        return True

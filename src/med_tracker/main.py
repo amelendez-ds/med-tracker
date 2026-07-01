@@ -1,9 +1,10 @@
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, Request
+from fastapi.responses import JSONResponse
 
-from med_tracker.alerts import notify_low_stock, verify_authorised_cron
+from med_tracker.alerts import notify_low_stock
 from med_tracker.core.stock import find_low_stock, verify_enough_stock
 from med_tracker.database import (
     Medication,
@@ -14,6 +15,8 @@ from med_tracker.database import (
     get_med,
     take_all_daily_doses,
 )
+from med_tracker.exceptions import InsufficientStockError, MedicationNotFoundError
+from med_tracker.security import verify_authorised_cron
 
 
 # This "lifespan" function runs before the API starts accepting requests
@@ -55,11 +58,10 @@ def take_medication(med_id: int) -> dict:
 
 
 # Route 4. DELETE: Remove a specific medication
-@app.delete("/medications/")
+@app.delete("/medications/{med_id}")
 def delete_medication(med_id: int) -> dict:
-    med = get_med(med_id)
-    delete_med(med_id)
-    return {"message": f"Medication {med.name} was sucessfully deleted."}
+    name = delete_med(med_id)
+    return {"message": f"Medication {name} was successfully deleted."}
 
 
 # Route 5. UPDATE: Refill an empty medication
@@ -100,3 +102,14 @@ def run_daily_automation(authorization: str | None = Header(None)) -> dict:
         "message": "Daily automation complete.",
         "alerts_sent_for": ", ".join(low_stock_meds.keys()) or "None",
     }
+
+
+# Exception handlers
+@app.exception_handler(MedicationNotFoundError)
+def _not_found(request: Request, exc: MedicationNotFoundError) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
+@app.exception_handler(InsufficientStockError)
+def _insufficient(request: Request, exc: InsufficientStockError) -> JSONResponse:
+    return JSONResponse(status_code=400, content={"detail": str(exc)})

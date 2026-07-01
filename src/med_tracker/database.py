@@ -2,8 +2,9 @@ import os
 from collections.abc import Sequence
 
 from dotenv import load_dotenv
-from fastapi import HTTPException
 from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+from med_tracker.exceptions import MedicationNotFoundError
 
 # Load the secret variables from the .env file (for local testing)
 load_dotenv()
@@ -45,7 +46,7 @@ def get_med(med_id: int) -> Medication:
     with Session(engine) as session:
         med = session.get(Medication, med_id)
         if not med:
-            raise HTTPException(status_code=404, detail="Medication not found")
+            raise MedicationNotFoundError("Medication not found.")
     return med
 
 
@@ -59,15 +60,15 @@ def add_med(med: Medication) -> Medication:
 
 
 # Delete one medication based on id
-def delete_med(med_id: int) -> None:
+def delete_med(med_id: int) -> str:
     with Session(engine) as session:
-        # Look up if the med exists
-        med = get_med(med_id)
-
-        # Delete the registry if it exists
-        if med:
-            session.delete(med)
-            session.commit()
+        med = session.get(Medication, med_id)
+        if med is None:
+            raise MedicationNotFoundError(f"Medication {med_id} not found")
+        name = med.name  # capture before deletion
+        session.delete(med)
+        session.commit()
+    return name
 
 
 # Take all daily medication
