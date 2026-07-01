@@ -45,7 +45,7 @@ def get_all_medications() -> Sequence[Medication]:
 def get_med(med_id: int) -> Medication:
     with Session(engine) as session:
         med = session.get(Medication, med_id)
-        if not med:
+        if med is None:
             raise MedicationNotFoundError("Medication not found.")
     return med
 
