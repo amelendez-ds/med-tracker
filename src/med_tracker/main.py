@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 
-from med_tracker.alerts import notify_low_stock
 from med_tracker.core.stock import find_low_stock, verify_enough_stock
 from med_tracker.database import (
     Medication,
@@ -16,6 +15,7 @@ from med_tracker.database import (
     take_all_daily_doses,
 )
 from med_tracker.exceptions import InsufficientStockError, MedicationNotFoundError
+from med_tracker.notifications import notify_low_stock
 from med_tracker.security import verify_authorised_cron
 
 
