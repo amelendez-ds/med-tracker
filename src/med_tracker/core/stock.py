@@ -16,6 +16,8 @@ def is_low_stock(days_left: int, threshold_days: int) -> bool:
 def find_low_stock(
     medications: Sequence[Medication], threshold_days: int = 14
 ) -> dict[str, int]:
+    """Checks for low stock medication, and for each one found it returns a dictionary
+    with the name and the days left."""
     low_stock_meds: dict[str, int] = {}
     for med in medications:
         if med.daily_dosage <= 0:
