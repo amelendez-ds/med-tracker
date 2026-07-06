@@ -1,7 +1,9 @@
 import os
 from collections.abc import Sequence
+from functools import lru_cache
 
 from dotenv import load_dotenv
+from sqlalchemy.engine import Engine
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from med_tracker.exceptions import MedicationNotFoundError
@@ -18,32 +20,34 @@ class Medication(SQLModel, table=True):
     daily_dosage: int
 
 
-# 2. Grab the Neon URL from the environment
-database_url = os.getenv("DATABASE_URL")
-if not database_url:
-    raise ValueError(
-        "DATABASE_URL is missing! Check your .env file or Render environment variables."
-    )
-
-# 3. Create the engine and connect it to where my (Neon) database lives
-engine = create_engine(database_url, echo=True)
+# 2. We import the DB engine via function. First time it runs, engine is built and
+# cached; later it always returns the cached one. This prevents actions environment-
+# dependent when we import the med_tracker.database module for test purposes.
+@lru_cache
+def get_engine() -> Engine:
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError(
+            "DATABASE_URL is missing! Check .env file or Render environment variables."
+        )
+    return create_engine(database_url, echo=True)
 
 
 # Function to physically create the file and tables when the app starts
 def create_db_and_tables() -> None:
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(get_engine())
 
 
 # Get all medications function
 def get_all_medications() -> Sequence[Medication]:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         # select() fetches everything from the Medication table
         return session.exec(select(Medication)).all()
 
 
 # Get one specific medication
 def get_med(med_id: int) -> Medication:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         med = session.get(Medication, med_id)
         if med is None:
             raise MedicationNotFoundError("Medication not found.")
@@ -52,7 +56,7 @@ def get_med(med_id: int) -> Medication:
 
 # Add one new medication to the database
 def add_med(med: Medication) -> Medication:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         session.add(med)
         session.commit()
         session.refresh(med)  # Updates the object with the new ID
@@ -61,7 +65,7 @@ def add_med(med: Medication) -> Medication:
 
 # Delete one medication based on id
 def delete_med(med_id: int) -> str:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         med = session.get(Medication, med_id)
         if med is None:
             raise MedicationNotFoundError(f"Medication {med_id} not found")
@@ -73,7 +77,7 @@ def delete_med(med_id: int) -> str:
 
 # Take all daily medication
 def take_all_daily_doses() -> Sequence[Medication]:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         medications = session.exec(select(Medication)).all()
 
         for med in medications:
