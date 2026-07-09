@@ -1,12 +1,9 @@
-import os
-
 from fastapi import HTTPException
 
-# Load the secret key that protects our daily job
-CRON_SECRET = os.getenv("CRON_SECRET")
+from med_tracker.config import get_settings
 
 
-def verify_authorised_cron(authorization: str | None) -> None:
+def verify_authorized_cron(authorization: str | None) -> None:
     # Security Check: Is this the authorized Alarm Clock?
-    if authorization != f"Bearer {CRON_SECRET}":
+    if authorization != f"Bearer {get_settings().cron_secret}":
         raise HTTPException(status_code=401, detail="Unauthorized access!")

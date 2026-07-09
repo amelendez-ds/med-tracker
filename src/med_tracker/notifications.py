@@ -1,16 +1,9 @@
-import os
 from collections.abc import Sequence
 from typing import Protocol
 
 import requests
-from dotenv import load_dotenv
 
-# This needs to be loaded before getting env variables
-load_dotenv()
-
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
+from med_tracker.config import get_settings
 
 
 class NotificationChannel(Protocol):
@@ -21,13 +14,13 @@ class NotificationChannel(Protocol):
 
 class EmailChannel:
     def send(self, med_name: str, days_left: int) -> None:
-        if not RESEND_API_KEY or not EMAIL_ADDRESS:
+        if not get_settings().resend_api_key or not get_settings().email_address:
             print(f"Terminal Alert: {med_name} is low. Credentials missing.")
             return
 
         url = "https://api.resend.com/emails"
         headers = {
-            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Authorization": f"Bearer {get_settings().resend_api_key}",
             "Content-Type": "application/json",
         }
 
@@ -35,7 +28,7 @@ class EmailChannel:
         # to send emails to the address I verified my account with.
         payload = {
             "from": "onboarding@resend.dev",
-            "to": EMAIL_ADDRESS,
+            "to": get_settings().email_address,
             "subject": f"Medication Alert: Low stock for {med_name}",
             "html": (
                 f"<p>Time to refill <strong>{med_name}</strong>! "
@@ -53,7 +46,7 @@ class EmailChannel:
 
 class DiscordChannel:
     def send(self, med_name: str, days_left: int) -> None:
-        if not DISCORD_WEBHOOK:
+        if not get_settings().discord_webhook:
             print("Webhook URL missing.")
             return
 
@@ -65,7 +58,7 @@ class DiscordChannel:
         }
 
         try:
-            response = requests.post(DISCORD_WEBHOOK, json=message)
+            response = requests.post(get_settings().discord_webhook, json=message)
             response.raise_for_status()
             print(f"Alert sent successfully for {med_name}!")
         except Exception as e:

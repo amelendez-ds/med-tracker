@@ -16,7 +16,7 @@ from med_tracker.database import (
 )
 from med_tracker.exceptions import InsufficientStockError, MedicationNotFoundError
 from med_tracker.notifications import notify_low_stock
-from med_tracker.security import verify_authorised_cron
+from med_tracker.security import verify_authorized_cron
 
 
 # This "lifespan" function runs before the API starts accepting requests
@@ -90,7 +90,7 @@ def check_all_stock() -> dict:
 @app.post("/daily-automation/")
 def run_daily_automation(authorization: str | None = Header(None)) -> dict:
     # If this fails, it raises an HTTPException and stops execution automatically
-    verify_authorised_cron(authorization)
+    verify_authorized_cron(authorization)
     # 1. Take the doses and get the updated list back
     medications = take_all_daily_doses()
     # 2. Check for low stock

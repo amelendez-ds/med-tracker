@@ -1,15 +1,11 @@
-import os
 from collections.abc import Sequence
 from functools import lru_cache
 
-from dotenv import load_dotenv
 from sqlalchemy.engine import Engine
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
+from med_tracker.config import get_settings
 from med_tracker.exceptions import MedicationNotFoundError
-
-# Load the secret variables from the .env file (for local testing)
-load_dotenv()
 
 
 # 1. Define shape of the data. My class inherits SQLModel, which inherits from Pydantic
@@ -25,12 +21,7 @@ class Medication(SQLModel, table=True):
 # dependent when we import the med_tracker.database module for test purposes.
 @lru_cache
 def get_engine() -> Engine:
-    database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        raise ValueError(
-            "DATABASE_URL is missing! Check .env file or Render environment variables."
-        )
-    return create_engine(database_url, echo=True)
+    return create_engine(get_settings().database_url, echo=True)
 
 
 # Function to physically create the file and tables when the app starts

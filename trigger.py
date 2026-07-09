@@ -1,18 +1,33 @@
-import os
+import sys
 import urllib.request
+from functools import lru_cache
 
-# Grab our secrets from Render
-app_url = os.getenv("WEB_SERVICE_URL")
-cron_secret = os.getenv("CRON_SECRET")
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-if not app_url or not cron_secret:
+
+class TriggerSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    web_service_url: str
+    cron_secret: str = ""
+
+
+@lru_cache
+def get_trigger_settings() -> TriggerSettings:
+    return TriggerSettings()  # type: ignore[call-arg]
+
+
+settings = get_trigger_settings()
+
+if not settings.web_service_url or not settings.cron_secret:
     print("Missing Environment Variables! Check Render settings.")
-    exit(1)
+    sys.exit(1)
 
 # Build the secure request
-target_endpoint = f"{app_url}/daily-automation/"
+target_endpoint = f"{settings.web_service_url}/daily-automation/"
 request = urllib.request.Request(
-    target_endpoint, headers={"authorization": f"Bearer {cron_secret}"}, method="POST"
+    target_endpoint,
+    headers={"authorization": f"Bearer {settings.cron_secret}"},
+    method="POST",
 )
 
 # Send request

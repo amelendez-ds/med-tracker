@@ -1,5 +1,6 @@
 # Python-generated files
 __pycache__/
+.mypy_cache
 .pytest_cache/
 .ruff_cache/
 *.py[oc]
@@ -11,6 +12,7 @@ wheels/
 # Virtual environments
 .venv
 .env
+.vscode
 
 # Local folders & files
 data/
