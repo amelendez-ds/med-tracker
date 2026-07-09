@@ -5,15 +5,6 @@ import requests
 
 from med_tracker.config import get_settings
 
-# from dotenv import load_dotenv
-
-# # This needs to be loaded before getting env variables
-# load_dotenv()
-
-# EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-# RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-# DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
-
 
 class NotificationChannel(Protocol):
     """The contract every alert channel must satisfy."""

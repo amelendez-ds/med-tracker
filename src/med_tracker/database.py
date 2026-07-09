@@ -1,15 +1,11 @@
 from collections.abc import Sequence
 from functools import lru_cache
 
-from dotenv import load_dotenv
 from sqlalchemy.engine import Engine
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from med_tracker.config import get_settings
 from med_tracker.exceptions import MedicationNotFoundError
-
-# Load the secret variables from the .env file (for local testing)
-load_dotenv()
 
 
 # 1. Define shape of the data. My class inherits SQLModel, which inherits from Pydantic
