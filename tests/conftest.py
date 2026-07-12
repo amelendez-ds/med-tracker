@@ -26,6 +26,13 @@ def client() -> Iterator[TestClient]:
     get_settings.cache_clear()
     get_engine.cache_clear()
 
+    # Halt the suite rather than ever touch a real database.
+    # I wrote this line after my tests accidentally overwrote prod data
+    settings = get_settings()
+    assert settings.database_url.startswith("sqlite:///"), (
+        f"REFUSING TO RUN: tests pointed at {settings.database_url!r}, not a test DB!"
+    )
+
     from med_tracker.main import app
 
     with TestClient(app) as c:  # "with" runs the lifespan, which creates tables
