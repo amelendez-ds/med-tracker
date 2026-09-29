@@ -92,7 +92,7 @@ For this purpose, I brainstormed an application that I (and others) would find u
 I selected the stack for their utility in a Machine Learning pipeline, but I created the app **without a Machine Learning component**. Instead of practicing data processing or training models, I wanted to **put that aside to focus on software engineering in Python**. 
 
 I inventorised a list of concepts to practice:
-- Project Structure and Software Arquitecture
+- Project Structure and Software Architecture
 - Linting and Typechecking
 - Unit Testing via PyTest
 - Error Handling
